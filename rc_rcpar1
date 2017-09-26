@@ -91,7 +91,7 @@ fi
 
 BEGIN=`mtime`
 
-files=`rcpar1 ${skip} ${skip_firstboot} ${_boot} /etc/rc.d/*`
+rcpar1 ${skip} ${skip_firstboot} ${_boot} /etc/rc.d/*
 
 END=`mtime`
 echo "$BEGIN $END" >> "/root/rc_rcpar1.times"
