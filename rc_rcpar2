@@ -96,7 +96,7 @@ files=`rcorder2 ${skip} ${skip_firstboot} /etc/rc.d/*`
 for _rc_elem in ${files}; do
 	case ${_rc_elem} in
 	END)
-		rcpar2 ${to_exec}
+		rcpar2 -t ${_boot} ${to_exec}
 		to_exec=""
 	;;
 	*)
