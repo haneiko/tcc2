@@ -91,10 +91,10 @@ fi
 
 BEGIN=`mtime`
 
-rcpar1 ${skip} ${skip_firstboot} ${_boot} /etc/rc.d/*
+rcpar1 ${skip} ${skip_firstboot} ${_boot} /etc/rc.d/* /usr/local/etc/rc.d/*
 
 END=`mtime`
-echo "$BEGIN $END" >> "/root/rc_rcpar1.times"
+echo "$END-$BEGIN" | bc -l >> "/root/rc_rcpar1.times"
 unset BEGIN END
 
 # Remove the firstboot sentinel, and reboot if it was requested.

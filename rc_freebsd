@@ -131,7 +131,7 @@ for _rc_elem in ${files}; do
 done
 
 END=`mtime`
-echo "$BEGIN $END" >> "/root/rc_freebsd.times"
+echo "$END-$BEGIN" | bc -l >> "/root/rc_freebsd.times"
 unset BEGIN END
 
 # Remove the firstboot sentinel, and reboot if it was requested.
