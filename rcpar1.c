@@ -311,27 +311,22 @@ hasht *hasht_new(size_t size)
 	return h;
 }
 
-uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length)
+uint32_t dumb_hash(const uint8_t* key, size_t len)
 {
 	size_t i;
 	uint32_t hash;
-	i = 0;
 	hash = 0;
-	while (i != length) {
-		hash += key[i++];
-		hash += hash << 10;
-		hash ^= hash >> 6;
+	for (i=0; i!=len; i++) {
+		hash += key[i];
+		hash += hash << 4;
 	}
-	hash += hash << 3;
-	hash ^= hash >> 11;
-	hash += hash << 15;
 	return hash;
 }
 
 size_t hasht_index(hasht *h, const uint8_t *key, size_t len)
 {
 	uint32_t hash;
-	hash = jenkins_one_at_a_time_hash(key, len);
+	hash = dumb_hash(key, len);
 	return hash % h->size;
 }
 
