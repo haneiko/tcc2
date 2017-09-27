@@ -242,8 +242,10 @@ script *parse_lines(const char *path)
 	cur = calloc(1, sizeof(script));
 	cur->path = path;
 	file = fopen(cur->path, "r");
-	if(!file)
+	if(!file) {
+		fprintf(stderr, "Cannot open file %s\n", cur->path);
 		die();
+	}
 	parsing = false;
 
 	while((buffer = getline(file))) {
