@@ -91,12 +91,13 @@ fi
 
 BEGIN=`mtime`
 
-files=`rcorder2 ${skip} ${skip_firstboot} /etc/rc.d/* /usr/local/etc/rc.d/*`
+local_=`ls /usr/local/etc/rc.d/* 2>/dev/null`
+files=`rcorder2 ${skip} ${skip_firstboot} /etc/rc.d/* ${local_}`
 
 for _rc_elem in ${files}; do
 	case ${_rc_elem} in
 	END)
-		rcpar2 -t ${_boot} ${to_exec}
+		rcpar -t ${_boot} ${to_exec}
 		to_exec=""
 	;;
 	*)
@@ -108,7 +109,7 @@ done
 unset files local_rc
 
 END=`mtime`
-echo "$END-$BEGIN" | bc -l >> "/root/rc_rcpar2.times"
+echo "$END-$BEGIN" | bc -l >> "/root/rc_rcpar.times"
 unset BEGIN END
 
 # Remove the firstboot sentinel, and reboot if it was requested.
