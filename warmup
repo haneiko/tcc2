@@ -10,7 +10,7 @@ e=0.05
 z=1.96
 tmp=0
 N=0
-samples=3
+samples=10
 
 calc_n()
 {
