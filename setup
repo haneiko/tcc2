@@ -15,6 +15,7 @@ echo "Compiling"
 make
 
 echo "Installing"
+chmod +x rcorder2 rcpar mtime warmup collect
 mv rcpar	/sbin/
 mv rcorder2	/sbin/
 mv mtime	/sbin/
