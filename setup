@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -e
+
+files="rcpar.c rcorder2.c mtime.c Makefile\
+     rc_freebsd rc_rcpar collect warmup"
+
+echo "Downloading files"
+for file in $files; do
+    fetch --no-verify-peer\
+          https://raw.githubusercontent.com/haneiko/tcc2/master/$file
+done
+
+echo "Compiling"
+make
+
+echo "Installing"
+mv rcpar	/sbin/
+mv rcorder2	/sbin/
+mv mtime	/sbin/
+cp rc_freebsd	/etc/rc
+
+echo "Enabling autologin for root"
+sed -i -- 's:^ttyv0.*$:ttyv0 \"/usr/libexec/getty al.Pc\" xterm on secure:g'\
+    /etc/ttys
+
+echo "Setting up autotest"
+[ -n "`grep "warmup" ~/.cshrc`" ]\
+    || echo "~/warmup" >> ~/.cshrc
+
+[ -n "`grep "autoboot_delay" /boot/loader.conf`" ]\
+    || echo "autoboot_delay=\"0\"" >> /boot/loader.conf
+
+[ -n "`grep "background_fsck_delay" /etc/rc.conf`" ]\
+    || echo "background_fsck_delay=\"0\"" >> /etc/rc.conf
+
+echo "Rebooting"
+reboot

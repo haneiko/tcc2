@@ -1,0 +1,42 @@
+#!/bin/sh
+
+set -e
+
+N=$1
+
+files="rc_freebsd.times rc_rcpar.times"
+
+for file in $files; do
+    touch $file
+    name=`echo $file | cut -f1 -d'.'`
+    lines=`cat $file | wc -l`
+    if [ $lines -lt $N ]; then
+        echo $name
+        cp $name /etc/rc
+        reboot
+    fi
+done
+
+sed -i -- "s:~/collect.*::g" ~/.cshrc
+
+for file in $files; do
+    name=`echo $file | cut -f1 -d'.'`
+    lines=`cat $file | wc -l`
+    sum=`awk 'BEGIN {sum = 0} {sum += $1} END {print sum}' $file`
+    average=`awk -v sum="$sum" 'END {print sum/NR}' $file`
+    variance=`awk -v n="$lines" -v average="$average" '
+BEGIN {sum = 0}
+      {sum += ($1 - average)^2}
+END   {print sum/(n-1)}
+' $file`
+    deviation=`awk -v vari="$variance" 'END{print sqrt(vari)}' $file`
+
+    echo "Grupo: $name"
+    echo "Tempos:"
+    awk '{printf " "$1}' $file
+    echo
+    echo "Média: $average"
+    echo "Variância: $variance"
+    echo "Desvio padrão: $deviation"
+    echo
+done
