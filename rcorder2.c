@@ -35,33 +35,30 @@ typedef struct hasht {
 	slot **slots;
 } hasht;
 
-#define die()								\
-	do {								\
-		fprintf(stderr, "ERROR: %s %d\n", __FILE__, __LINE__);	\
-		exit(EXIT_FAILURE);					\
-	} while(0)
+#define die() do {						\
+	fprintf(stderr, "ERROR: %s %d\n", __FILE__, __LINE__);	\
+	exit(EXIT_FAILURE);					\
+} while(0)
 
-#define LIST_PUSH(HEAD, ITEM)			\
-	do {					\
-		ITEM->next = HEAD;		\
-		if(HEAD)			\
-			HEAD->prev = ITEM;	\
-		HEAD = ITEM;			\
-	} while(0)
+#define LIST_PUSH(HEAD, ITEM) do {	\
+	ITEM->next = HEAD;		\
+	if(HEAD)			\
+		HEAD->prev = ITEM;	\
+	HEAD = ITEM;			\
+} while(0)
 
-#define LIST_FREE(HEAD, ITEM)				\
-	do {						\
-		typeof (HEAD) tmp;			\
-		tmp = ITEM->next;			\
-		if(ITEM->next)				\
-			ITEM->next->prev = ITEM->prev;	\
-		if(ITEM->prev)				\
-			ITEM->prev->next = ITEM->next;	\
-		else					\
-			HEAD = tmp;			\
-		free(ITEM);				\
-		ITEM = tmp;				\
-	} while(0)
+#define LIST_FREE(HEAD, ITEM) do {		\
+	typeof (HEAD) tmp;			\
+	tmp = ITEM->next;			\
+	if(ITEM->next)				\
+		ITEM->next->prev = ITEM->prev;	\
+	if(ITEM->prev)				\
+		ITEM->prev->next = ITEM->next;	\
+	else					\
+		HEAD = tmp;			\
+	free(ITEM);				\
+	ITEM = tmp;				\
+} while(0)
 
 void list_alloc_and_push(list **head, void *item);
 hasht *hasht_new(size_t size);
