@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/hash.h>
 
 typedef struct list {
 	void *item;
@@ -333,22 +334,10 @@ hasht *hasht_new(size_t size)
 	return h;
 }
 
-uint32_t dumb_hash(const uint8_t* key, size_t len)
-{
-	size_t i;
-	uint32_t hash;
-	hash = 0;
-	for (i=0; i!=len; i++) {
-		hash += key[i];
-		hash += hash << 4;
-	}
-	return hash;
-}
-
-size_t hasht_index(hasht *h, const uint8_t *key, size_t len)
+size_t hasht_index(hasht *h, const uint8_t *key)
 {
 	uint32_t hash;
-	hash = dumb_hash(key, len);
+	hash = hash32_str(key, 0);
 	return hash % h->size;
 }
 
@@ -358,7 +347,7 @@ slot *_hasht_search(hasht *h, const uint8_t *key, size_t len)
 	slot *slot;
 	bool found;
 
-	index = hasht_index(h, key, len);
+	index = hasht_index(h, key);
 
 	FOREACH(slot, h->slots[index]) {
 		if(len != slot->len)
@@ -396,7 +385,7 @@ void hasht_insert(hasht *h, void *dat, const uint8_t *key, size_t len)
 		slot->key = key;
 		slot->len = len;
 
-		index = hasht_index(h, key, len);
+		index = hasht_index(h, key);
 		PUSH(slot, h->slots[index]);
 	}
 	list_alloc_and_push(&slot->items, dat);
