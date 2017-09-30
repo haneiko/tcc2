@@ -40,14 +40,14 @@ typedef struct hasht {
 	exit(EXIT_FAILURE);					\
 } while(0)
 
-#define LIST_PUSH(HEAD, ITEM) do {	\
+#define PUSH(ITEM, HEAD) do {		\
 	ITEM->next = HEAD;		\
 	if(HEAD)			\
 		HEAD->prev = ITEM;	\
 	HEAD = ITEM;			\
 } while(0)
 
-#define LIST_FREE(HEAD, ITEM) do {		\
+#define FREE(ITEM, HEAD) do {			\
 	typeof (HEAD) tmp;			\
 	tmp = ITEM->next;			\
 	if(ITEM->next)				\
@@ -59,6 +59,9 @@ typedef struct hasht {
 	free(ITEM);				\
 	ITEM = tmp;				\
 } while(0)
+
+#define FOREACH(ITEM, HEAD)				\
+	for(ITEM = HEAD; ITEM; ITEM = ITEM->next)
 
 void list_alloc_and_push(list **head, void *item);
 hasht *hasht_new(size_t size);
@@ -75,7 +78,7 @@ int main(int argc, char *argv[])
 	hasht *provided;
 	hasht *required;
 	hasht *requires;
-	script *head;
+	script *scripts;
 
 	/* tmps */
 	int i;
@@ -99,22 +102,24 @@ int main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	head = parse_scripts(argc, argv);
-	head = del_skipped_scripts(head, skips);
+	scripts = parse_scripts(argc, argv);
+	scripts = del_skipped_scripts(scripts, skips);
 	provided = hasht_new(1000);
 	required = hasht_new(1000);
 	requires = hasht_new(1000);
 
 	/* Prepare table: provided */
-	for(cur = head; cur; cur = cur->next) {
-		for(key = cur->provide; key; key = key->next)
-			hasht_insert(provided, cur, key->item, strlen(key->item));
+	FOREACH(cur, scripts) {
+		FOREACH(key, cur->provide)
+			hasht_insert(provided, cur, key->item,
+				     strlen(key->item));
 	}
 
 	/* Convert BEFORE to REQUIRE */
-	for(cur = head; cur; cur = cur->next) {
-		for(key = cur->before; key; key = key->next) {
-			lst = hasht_search(provided, key->item, strlen(key->item));
+	FOREACH(cur, scripts) {
+		FOREACH(key, cur->before) {
+			lst = hasht_search(provided, key->item,
+					   strlen(key->item));
 			for(; lst; lst = lst->next) {
 				s = lst->item;
 				list_alloc_and_push(&s->require, cur->provide->item);
@@ -123,32 +128,31 @@ int main(int argc, char *argv[])
 	}
 
 	/* Prepare table: required */
-	for(cur = head; cur; cur = cur->next) {
-		for(key = cur->require; key; key = key->next)
+	FOREACH(cur, scripts) {
+		FOREACH(key, cur->require)
 			hasht_insert(required, cur, key->item, strlen(key->item));
 	}
 
 	/* Prepare table: requires */
-	for(cur = head; cur; cur = cur->next) {
-		for(key = cur->require; key; key = key->next) {
+	FOREACH(cur, scripts) {
+		FOREACH(key, cur->require) {
 			lst = hasht_search(provided, key->item, strlen(key->item));
 			for(; lst; lst = lst->next) {
 				tmp = lst->item;
-				for(key2 = cur->provide; key2; key2 = key2->next) {
-					hasht_insert(requires, tmp, key2->item,
-					             strlen(key2->item));
+				FOREACH(key2, cur->provide) {
+					hasht_insert(requires, tmp, key2->item, strlen(key2->item));
 				}
 			}
 		}
 	}
 
-	while(head) {
-		cur = head;
+	while(scripts) {
+		cur = scripts;
 		while(cur) {
 			if(!has_reqs(requires, cur)) {
 				printf("%s\n", cur->path);
 				del_required(requires, required, cur);
-				LIST_FREE(head, cur);
+				FREE(cur, scripts);
 				continue;
 			}
 			cur = cur->next;
@@ -164,7 +168,7 @@ void list_alloc_and_push(list **head, void *item)
 	list *tmp;
 	tmp = calloc(1, sizeof(list));
 	tmp->item = item;
-	LIST_PUSH((*head), tmp);
+	PUSH(tmp, (*head));
 }
 
 char *getline(FILE *file)
@@ -268,11 +272,11 @@ script *parse_lines(const char *path)
 
 script *parse_scripts(int argc, char *argv[])
 {
-	script *cur, *head;
+	script *s, *scripts;
 	const char *path;
 	int i;
 
-	head = NULL;
+	scripts = NULL;
 	for(i = 0; i < argc; i++) {
 		path = argv[i];
 
@@ -286,10 +290,10 @@ script *parse_scripts(int argc, char *argv[])
 			/* printf("ignoring %s\n", path); */
 			continue;
 		}
-		cur = parse_lines(path);
-		LIST_PUSH(head, cur);
+		s = parse_lines(path);
+		PUSH(s, scripts);
 	}
-	return head;
+	return scripts;
 }
 
 bool must_skip(script *s, list *skips)
@@ -297,8 +301,8 @@ bool must_skip(script *s, list *skips)
 	list *key;
 	list *skip;
 
-	for(key = s->keyword; key; key = key->next)
-		for(skip = skips; skip; skip = skip->next)
+	FOREACH(key, s->keyword)
+		FOREACH(skip, skips)
 			if(strcmp(key->item, skip->item) == 0)
 				return true;
 	return false;
@@ -312,7 +316,7 @@ script *del_skipped_scripts(script *head, list *skips)
 	while(cur) {
 		if(must_skip(cur, skips)) {
 			/* printf("skipping '%s'\n", cur->path); */
-			LIST_FREE(head, cur);
+			FREE(cur, head);
 			continue;
 		}
 		cur = cur->next;
@@ -355,9 +359,8 @@ slot *_hasht_search(hasht *h, const uint8_t *key, size_t len)
 	bool found;
 
 	index = hasht_index(h, key, len);
-	slot = h->slots[index];
 
-	for(; slot; slot = slot->next) {
+	FOREACH(slot, h->slots[index]) {
 		if(len != slot->len)
 			continue;
 
@@ -394,7 +397,7 @@ void hasht_insert(hasht *h, void *dat, const uint8_t *key, size_t len)
 		slot->len = len;
 
 		index = hasht_index(h, key, len);
-		LIST_PUSH(h->slots[index], slot);
+		PUSH(slot, h->slots[index]);
 	}
 	list_alloc_and_push(&slot->items, dat);
 }
@@ -409,20 +412,18 @@ void del_required(hasht *requires, hasht *required, script *cur)
 	list *lst2;
 	slot *s;
 
-	for(prov = cur->provide; prov; prov = prov->next) {
-
+	FOREACH(prov, cur->provide) {
 		lst = hasht_search(required, prov->item, strlen(prov->item));
 		for(; lst; lst = lst->next) {
 			scr = lst->item;
 
-			for(prov2 = scr->provide; prov2; prov2 = prov2->next) {
-				s = _hasht_search(requires, prov2->item,
-				                  strlen(prov2->item));
+			FOREACH(prov2, scr->provide) {
+				s = _hasht_search(requires, prov2->item, strlen(prov2->item));
 				lst2 = s->items;
 				while(lst2) {
 					scr2 = lst2->item;
 					if(scr2 == cur) {
-						LIST_FREE(s->items, lst2);
+						FREE(lst2, s->items);
 						continue;
 					}
 					lst2 = lst2->next;
@@ -437,7 +438,7 @@ bool has_reqs(hasht *requires, script *cur)
 	list *lst;
 	list *key;
 
-	for(key = cur->provide; key; key = key->next) {
+	FOREACH(key, cur->provide) {
 		lst = hasht_search(requires, key->item, strlen(key->item));
 		if(lst && lst->item)
 			return true;
