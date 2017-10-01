@@ -190,7 +190,7 @@ char *getline(FILE *file)
 	} while(c != '\n' && c != EOF);
 	size++;
 
-	if(size > 0) {
+	if(size > 1) {
 		if(fsetpos(file, &begin))
 			die();
 		buffer = malloc(size * sizeof(char));
