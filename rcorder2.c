@@ -408,12 +408,15 @@ void del_required(hasht *requires, hasht *required, script *cur)
 	slot *s;
 
 	FOREACH(prov, cur->provide) {
-		lst = hasht_search(required, prov->item, strlen(prov->item));
+		lst = hasht_search(required, prov->item,
+				   strlen(prov->item));
 		for(; lst; lst = lst->next) {
 			scr = lst->item;
 
 			FOREACH(prov2, scr->provide) {
-				s = _hasht_search(requires, prov2->item, strlen(prov2->item));
+				s = _hasht_search(requires,
+						  prov2->item,
+						  strlen(prov2->item));
 				lst2 = s->items;
 				while(lst2) {
 					scr2 = lst2->item;
@@ -434,7 +437,8 @@ bool has_reqs(hasht *requires, script *cur)
 	list *key;
 
 	FOREACH(key, cur->provide) {
-		lst = hasht_search(requires, key->item, strlen(key->item));
+		lst = hasht_search(requires, key->item,
+				   strlen(key->item));
 		if(lst && lst->item)
 			return true;
 	}
