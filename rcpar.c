@@ -3,10 +3,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define die()	  \
-	do { \
-		fprintf(stderr, "ERROR: %s %d\n", __FILE__, __LINE__); \
-		exit(EXIT_FAILURE); \
+#define die()								\
+	do {								\
+		fprintf(stderr, "ERROR: %s %d\n", __FILE__, __LINE__);	\
+		exit(EXIT_FAILURE);					\
 	} while(0)
 
 int main(int argc, char *argv[])
