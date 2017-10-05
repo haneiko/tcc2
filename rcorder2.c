@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
 	script *s;
 	script *cur;
 	script *tmp;
+	list *no_reqs;
 
 	skips = NULL;
 
@@ -123,7 +124,8 @@ int main(int argc, char *argv[])
 					   strlen(key->item));
 			for(; lst; lst = lst->next) {
 				s = lst->item;
-				list_alloc_and_push(&s->require, cur->provide->item);
+				list_alloc_and_push(&s->require,
+						    cur->provide->item);
 			}
 		}
 	}
@@ -131,32 +133,36 @@ int main(int argc, char *argv[])
 	/* Prepare table: required */
 	FOREACH(cur, scripts) {
 		FOREACH(key, cur->require)
-			hasht_insert(required, cur, key->item, strlen(key->item));
+			hasht_insert(required, cur, key->item,
+				     strlen(key->item));
 	}
 
 	/* Prepare table: requires */
 	FOREACH(cur, scripts) {
 		FOREACH(key, cur->require) {
-			lst = hasht_search(provided, key->item, strlen(key->item));
+			lst = hasht_search(provided, key->item,
+					   strlen(key->item));
 			for(; lst; lst = lst->next) {
 				tmp = lst->item;
 				FOREACH(key2, cur->provide) {
-					hasht_insert(requires, tmp, key2->item, strlen(key2->item));
+					hasht_insert(requires, tmp,
+						     key2->item,
+						     strlen(key2->item));
 				}
 			}
 		}
 	}
 
 	while(scripts) {
-		cur = scripts;
-		while(cur) {
-			if(!has_reqs(requires, cur)) {
-				printf("%s\n", cur->path);
-				del_required(requires, required, cur);
-				FREE(cur, scripts);
-				continue;
-			}
-			cur = cur->next;
+		no_reqs = NULL;
+		FOREACH(cur, scripts)
+			if(!has_reqs(requires, cur))
+				list_alloc_and_push(&no_reqs, cur);
+		FOREACH(lst, no_reqs) {
+			cur = lst->item;
+			printf("%s\n", cur->path);
+			del_required(requires, required, cur);
+			FREE(cur, scripts);
 		}
 		printf("END\n");
 	}
