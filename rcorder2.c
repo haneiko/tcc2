@@ -36,30 +36,30 @@ typedef struct hasht {
 	slot **slots;
 } hasht;
 
-#define die() do {						\
-	fprintf(stderr, "ERROR: %s %d\n", __FILE__, __LINE__);	\
-	exit(EXIT_FAILURE);					\
-} while(0)
+#define die() do {							\
+		fprintf(stderr, "ERROR: %s %d\n", __FILE__, __LINE__);	\
+		exit(EXIT_FAILURE);					\
+	} while(0)
 
-#define PUSH(ITEM, HEAD) do {		\
-	ITEM->next = HEAD;		\
-	if(HEAD)			\
-		HEAD->prev = ITEM;	\
-	HEAD = ITEM;			\
-} while(0)
+#define PUSH(ITEM, HEAD) do {			\
+		ITEM->next = HEAD;		\
+		if(HEAD)			\
+			HEAD->prev = ITEM;	\
+		HEAD = ITEM;			\
+	} while(0)
 
-#define FREE(ITEM, HEAD) do {			\
-	typeof (HEAD) tmp;			\
-	tmp = ITEM->next;			\
-	if(ITEM->next)				\
-		ITEM->next->prev = ITEM->prev;	\
-	if(ITEM->prev)				\
-		ITEM->prev->next = ITEM->next;	\
-	else					\
-		HEAD = tmp;			\
-	free(ITEM);				\
-	ITEM = tmp;				\
-} while(0)
+#define FREE(ITEM, HEAD) do {				\
+		typeof (HEAD) tmp;			\
+		tmp = ITEM->next;			\
+		if(ITEM->next)				\
+			ITEM->next->prev = ITEM->prev;	\
+		if(ITEM->prev)				\
+			ITEM->prev->next = ITEM->next;	\
+		else					\
+			HEAD = tmp;			\
+		free(ITEM);				\
+		ITEM = tmp;				\
+	} while(0)
 
 #define FOREACH(ITEM, HEAD)				\
 	for(ITEM = HEAD; ITEM; ITEM = ITEM->next)
@@ -67,7 +67,7 @@ typedef struct hasht {
 void list_alloc_and_push(list **head, void *item);
 hasht *hasht_new(size_t size);
 void hasht_insert(hasht *h, void *dat, const uint8_t *key, size_t len);
-list *hasht_search(hasht *h, const uint8_t *key, size_t len);
+list *hasht_getlist(hasht *h, const uint8_t *key, size_t len);
 script *parse_scripts(int argc, char *argv[]);
 script *del_skipped_scripts(script *head, list *skips);
 void del_required(hasht *requires, hasht *required, script *cur);
@@ -118,8 +118,8 @@ int main(int argc, char *argv[])
 	/* Convert BEFORE to REQUIRE */
 	FOREACH(cur, scripts) {
 		FOREACH(key, cur->before) {
-			lst = hasht_search(provided, key->item,
-					   strlen(key->item));
+			lst = hasht_getlist(provided, key->item,
+					    strlen(key->item));
 			for(; lst; lst = lst->next) {
 				s = lst->item;
 				list_alloc_and_push(&s->require,
@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
 	requires = hasht_new(1000);
 	FOREACH(cur, scripts) {
 		FOREACH(key, cur->require) {
-			lst = hasht_search(provided, key->item,
-					   strlen(key->item));
+			lst = hasht_getlist(provided, key->item,
+					    strlen(key->item));
 			for(; lst; lst = lst->next) {
 				tmp = lst->item;
 				FOREACH(key2, cur->provide) {
@@ -310,8 +310,8 @@ bool must_skip(script *s, list *skips)
 
 	FOREACH(key, s->keyword)
 		FOREACH(skip, skips)
-			if(strcmp(key->item, skip->item) == 0)
-				return true;
+		if(strcmp(key->item, skip->item) == 0)
+			return true;
 	return false;
 }
 
@@ -347,7 +347,7 @@ size_t hasht_index(hasht *h, const uint8_t *key)
 	return hash % h->size;
 }
 
-slot *_hasht_search(hasht *h, const uint8_t *key, size_t len)
+slot *hasht_getslot(hasht *h, const uint8_t *key, size_t len)
 {
 	size_t index, i;
 	slot *slot;
@@ -370,10 +370,10 @@ slot *_hasht_search(hasht *h, const uint8_t *key, size_t len)
 	return slot;
 }
 
-list *hasht_search(hasht *h, const uint8_t *key, size_t len)
+list *hasht_getlist(hasht *h, const uint8_t *key, size_t len)
 {
 	slot *slot;
-	slot = _hasht_search(h, key, len);
+	slot = hasht_getslot(h, key, len);
 	if(slot)
 		return slot->items;
 	return NULL;
@@ -384,7 +384,7 @@ void hasht_insert(hasht *h, void *dat, const uint8_t *key, size_t len)
 	slot *slot;
 	size_t index;
 
-	slot = _hasht_search(h, key, len);
+	slot = hasht_getslot(h, key, len);
 
 	if(!slot) {
 		slot = calloc(1, sizeof(*slot));
@@ -408,13 +408,13 @@ void del_required(hasht *requires, hasht *required, script *cur)
 	slot *s;
 
 	FOREACH(prov, cur->provide) {
-		lst = hasht_search(required, prov->item,
-				   strlen(prov->item));
+		lst = hasht_getlist(required, prov->item,
+				    strlen(prov->item));
 		for(; lst; lst = lst->next) {
 			scr = lst->item;
 
 			FOREACH(prov2, scr->provide) {
-				s = _hasht_search(requires,
+				s = hasht_getslot(requires,
 						  prov2->item,
 						  strlen(prov2->item));
 				lst2 = s->items;
@@ -437,8 +437,8 @@ bool has_reqs(hasht *requires, script *cur)
 	list *key;
 
 	FOREACH(key, cur->provide) {
-		lst = hasht_search(requires, key->item,
-				   strlen(key->item));
+		lst = hasht_getlist(requires, key->item,
+				    strlen(key->item));
 		if(lst && lst->item)
 			return true;
 	}
