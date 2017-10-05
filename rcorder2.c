@@ -76,10 +76,10 @@ bool has_reqs(hasht *requires, script *cur);
 int main(int argc, char *argv[])
 {
 	list *skips;
+	script *scripts;
 	hasht *provided;
 	hasht *required;
 	hasht *requires;
-	script *scripts;
 
 	/* tmps */
 	int i;
@@ -106,11 +106,9 @@ int main(int argc, char *argv[])
 
 	scripts = parse_scripts(argc, argv);
 	scripts = del_skipped_scripts(scripts, skips);
-	provided = hasht_new(1000);
-	required = hasht_new(1000);
-	requires = hasht_new(1000);
 
 	/* Prepare table: provided */
+	provided = hasht_new(1000);
 	FOREACH(cur, scripts) {
 		FOREACH(key, cur->provide)
 			hasht_insert(provided, cur, key->item,
@@ -131,6 +129,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Prepare table: required */
+	required = hasht_new(1000);
 	FOREACH(cur, scripts) {
 		FOREACH(key, cur->require)
 			hasht_insert(required, cur, key->item,
@@ -138,6 +137,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Prepare table: requires */
+	requires = hasht_new(1000);
 	FOREACH(cur, scripts) {
 		FOREACH(key, cur->require) {
 			lst = hasht_search(provided, key->item,
