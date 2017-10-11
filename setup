@@ -7,9 +7,8 @@ files="rcpar.c rcorder2.c mtime.c Makefile\
 
 echo "Downloading files"
 for file in $files; do
-    # fetch --no-verify-peer\
-    #       https://raw.githubusercontent.com/haneiko/tcc2/master/$file
-    scp mateus@192.168.1.23:~/projects/tcc2/$file .
+    fetch --no-verify-peer\
+          https://raw.githubusercontent.com/haneiko/tcc2/groups/$file
 done
 
 echo "Compiling"
