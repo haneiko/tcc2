@@ -35,7 +35,7 @@ case $ans in
     [Ss]*)
         for file in $files; do
             name=`echo $file | cut -f1 -d'.'`
-            mv $name.time $name.warmup
+            mv $name.times $name.warmup
         done
 
         sed -i -- "s:~/warmup:~/collect $z $e $N $S:g" ~/.cshrc

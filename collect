@@ -21,4 +21,8 @@ done
 
 sed -i -- "s:~/collect.*::g" ~/.cshrc
 
-calc_stats $z $e $N $file
+for file in $files; do
+    name=`echo $file | cut -f1 -d'.'`
+    echo "Grupo: $name"
+    calc_stats $z $e $N $file
+done
