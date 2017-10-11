@@ -3,23 +3,22 @@
 set -e
 
 files="rcpar.c rcorder2.c mtime.c Makefile\
-     rc_freebsd rc_rcpar collect warmup"
+     rc_freebsd rc_rcpar collect warmup calc_stats.c"
 
 echo "Downloading files"
 for file in $files; do
-    fetch --no-verify-peer\
-          https://raw.githubusercontent.com/haneiko/tcc2/master/$file
+    # fetch --no-verify-peer\
+    #       https://raw.githubusercontent.com/haneiko/tcc2/master/$file
+    scp mateus@192.168.1.23:~/projects/tcc2/$file .
 done
 
 echo "Compiling"
 make
 
 echo "Installing"
-chmod +x rcorder2 rcpar mtime warmup collect
-mv rcpar	/sbin/
-mv rcorder2	/sbin/
-mv mtime	/sbin/
-cp rc_freebsd	/etc/rc
+chmod +x rcorder2 rcpar mtime warmup collect calc_stats
+make install
+cp rc_freebsd /etc/rc
 
 echo "Enabling autologin for root"
 sed -i -- 's:^ttyv0.*$:ttyv0 \"/usr/libexec/getty al.Pc\" xterm on secure:g'\

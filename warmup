@@ -1,73 +1,44 @@
 #!/bin/sh
-
 set -e
 
 files="rc_freebsd.times rc_rcpar.times"
-average=0
-variance=0
-deviation=0
-e=0.05
 z=1.96
-tmp=0
+e=0.05
 N=0
-samples=10
-
-calc_n()
-{
-    file=$1
-    lines=`cat $file | wc -l`
-    sum=`awk 'BEGIN {sum = 0} {sum += $1} END {print sum}' $file`
-    average=`awk -v sum="$sum" 'END {print sum/NR}' $file`
-    variance=`awk -v n="$lines" -v average="$average" '
-BEGIN {sum = 0}
-      {sum += ($1 - average)^2}
-END   {print sum/(n-1)}
-' $file`
-    deviation=`awk -v vari="$variance" 'END{print sqrt(vari)}' $file`
-    tmp=`awk -v var="$variance" -v z="$z" -v e="$e" '
-END {print int(var * (z^2) / (e^2)) + 1}' $file`
-}
+S=10
+tmp=0
+n1=10
 
 for file in $files; do
     touch $file
     name=`echo $file | cut -f1 -d'.'`
     lines=`cat $file | wc -l`
-    if [ $lines -lt $samples ]; then
-        echo $name
+    if [ $lines -lt $n1 ]; then
+        echo "$name $lines"
         cp $name /etc/rc
         reboot
+    else
+        tmp=`calc_stats "$z" "$e" "$n1" "$file" | awk 'END{print $5}'`
+        echo "Grupo: $name"
+        calc_stats $z $e $n1 $file
+        echo
+        if [ $tmp -gt $N ]; then
+            N=$tmp
+        fi
     fi
 done
 
-for file in $files; do
-    calc_n $file
-
-    name=`echo $file | cut -f1 -d'.'`
-    echo "Grupo: $name"
-    echo "Tempos:"
-    awk '{printf " "$1}' $file
-    echo
-    echo "Média: $average"
-    echo "Variância: $variance"
-    echo "Desvio padrão: $deviation"
-    echo "Nº de amostras necessárias: $tmp"
-    echo
-
-    if [ $tmp -gt $N ]; then
-        N=$tmp
-    fi
-done
-
-echo "Serão coletadas $N amostras por grupo."
+echo "Serão coletadas $S amostras de tamanho $N por grupo."
 echo "Deseja iniciar o processo? (s/n)"
 read ans
 case $ans in
     [Ss]*)
         for file in $files; do
             name=`echo $file | cut -f1 -d'.'`
-            mv $name.times $name.warmup
+            mv $name.time $name.warmup
         done
-        sed -i -- "s:~/warmup:~/collect $N:g" ~/.cshrc
+
+        sed -i -- "s:~/warmup:~/collect $z $e $N $S:g" ~/.cshrc
         reboot
         ;;
 esac
