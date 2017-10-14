@@ -2,7 +2,7 @@
 
 set -e
 
-files="rcpar.c rcorder2.c mtime.c Makefile\
+files="rcpar.c rcorder2.c mtime.c Makefile gen_graph \
      rc_freebsd rc_rcpar collect warmup calc_stats.c"
 
 echo "Downloading files"
