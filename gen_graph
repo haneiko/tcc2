@@ -1,0 +1,42 @@
+#!/bin/sh
+set -e
+
+files=`rcorder -s nostart /etc/rc.d/*`
+out=graph.dot
+
+echo "digraph G {" > $out
+for file in $files; do
+    awk '
+BEGIN {
+	i_pro = 0
+	i_req = 0
+	i_bef = 0
+}
+/# PROVIDE/ {
+	split($0, arr)
+	for(i = 3; i <= length(arr); i++)
+		provide[i_pro++] = arr[i]
+}
+/# REQUIRE/ {
+	split($0, arr)
+	for(i = 3; i <= length(arr); i++)
+		require[i_req++] = arr[i]
+}
+/# BEFORE/ {
+	split($0, arr)
+	for(i = 3; i <= length(arr); i++)
+		before[i_bef++] = arr[i]
+}
+END {
+	for(j = 0; j < length(provide); j++) {
+		for(i = 0; i < length(require); i++)
+			print "\"" provide[j] "\"->\"" require[i] "\";"
+		for(i = 0; i < length(before); i++)
+			print "\"" before[i] "\"->\"" provide[j] "\";"
+	}
+}' $file >> $out
+done
+echo "}" >> $out
+
+dot -Tpng $out -o graph.png
+rm -f $out
