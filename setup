@@ -3,7 +3,7 @@
 set -e
 
 files="rcpar.c rcorder2.c mtime.c Makefile gen_graph \
-     rc_freebsd rc_rcpar collect warmup calc_stats.c"
+     rc_freebsd rc_rcpar collect"
 
 echo "Downloading files"
 for file in $files; do
@@ -15,7 +15,7 @@ echo "Compiling"
 make
 
 echo "Installing"
-chmod +x rcorder2 rcpar mtime warmup collect calc_stats gen_graph
+chmod +x rcorder2 rcpar mtime collect gen_graph
 make install
 cp rc_freebsd /etc/rc
 
@@ -24,8 +24,8 @@ sed -i -- 's:^ttyv0.*$:ttyv0 \"/usr/libexec/getty al.Pc\" xterm on secure:g'\
     /etc/ttys
 
 echo "Setting up autotest"
-[ -n "`grep "warmup" ~/.cshrc`" ]\
-    || echo "~/warmup" >> ~/.cshrc
+[ -n "`grep "collect" ~/.cshrc`" ]\
+    || echo "~/collect" >> ~/.cshrc
 
 [ -n "`grep "autoboot_delay" /boot/loader.conf`" ]\
     || echo "autoboot_delay=\"0\"" >> /boot/loader.conf
