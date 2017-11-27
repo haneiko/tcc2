@@ -2,7 +2,6 @@
 set -e
 
 files="rc_freebsd.times rc_rcpar.times"
-z=2.575
 n=60
 
 for file in $files; do
